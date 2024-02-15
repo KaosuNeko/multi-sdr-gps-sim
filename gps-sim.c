@@ -66,6 +66,15 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
             }
             simulator.motion_file_name = strdup(arg);
             simulator.interactive_mode = false;
+            simulator.umLLH = false;
+            break;
+        case 'x':
+            if (arg == NULL) {
+                return ARGP_ERR_UNKNOWN;
+            }
+            simulator.motion_file_name = strdup(arg);
+            simulator.interactive_mode = false;
+            simulator.umLLH = true;
             break;
         case 701: // --station
             if (arg == NULL) {
@@ -207,6 +216,7 @@ static void simulator_init(void) {
     simulator.station_id = NULL;
     simulator.sdr_type = SDR_NONE;
     simulator.sample_size = SC08;
+    simulator.umLLH = false;
     pthread_cond_init(&simulator.gps_init_done, NULL);
     pthread_mutex_init(&simulator.gps_lock, NULL);
 }

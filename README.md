@@ -96,7 +96,8 @@ Options:
 --radio             -r  <name> Set the SDR device type name (default none)
 --uri               -U  <uri> ADLAM-Pluto URI
 --network           -N  <network> ADLAM-Pluto network IP or hostname (default pluto.local)
---motion            -m  <name> User motion file (dynamic mode)
+--motion            -m  <name> User motion file (xyz format, dynamic mode)
+--motion-x          -x  <name> User motion file (llh format, dynamic mode)
 --iq16                  Set IQ sample size to 16 bit (default 8 bit)
 --disable-iono      -I  Disable ionospheric delay for spacecraft scenario
 --verbose           -v  Show verbose output and details about simulated channels

@@ -69,6 +69,7 @@ typedef struct {
     int tx_gain;
     int ppb;
     int sample_size;
+    int umLLH;
     sdr_type_t sdr_type;
     char *nav_file_name;
     char *motion_file_name;

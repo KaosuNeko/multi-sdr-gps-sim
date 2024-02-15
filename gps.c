@@ -2276,6 +2276,49 @@ static int readUserMotion(double xyz[USER_MOTION_SIZE][3], const char *filename)
     return (numd);
 }
 
+/*! \brief Read the list of user motions from the input file
+ *  \param[out] xyz Output array of LatLonHei coordinates for user motion
+ *  \param[[in] filename File name of the text input file with format Lat,Lon,Hei
+ *  \returns Number of user data motion records read, -1 on error
+ *
+ * Added by romalvarezllorens@gmail.com
+ */
+static int readUserMotionLLH(double xyz[USER_MOTION_SIZE][3], const char *filename)
+{
+	FILE *fp;
+	int numd;
+	double t,llh[3];
+	char str[MAX_CHAR];
+
+	if (NULL==(fp=fopen(filename,"rt")))
+		return(-1);
+
+	for (numd=0; numd<USER_MOTION_SIZE; numd++)
+	{
+		if (fgets(str, MAX_CHAR, fp)==NULL)
+			break;
+
+		if (EOF==sscanf(str, "%lf,%lf,%lf,%lf", &t, &llh[0], &llh[1], &llh[2])) // Read CSV line
+			break;
+		
+		if (llh[0] > 90.0 || llh[0] < -90.0 || llh[1]>180.0 || llh[1] < -180.0)
+		{
+			gui_status_wprintw(RED, "ERROR: Invalid file format (time[s], latitude[deg], longitude[deg], height [m].\n");
+			numd = 0; // Empty user motion
+			break;
+		}
+
+		llh[0] /= R2D; // convert to RAD
+		llh[1] /= R2D; // convert to RAD
+
+		llh2xyz(llh, xyz[numd]);
+	}
+
+	fclose(fp);
+
+	return (numd);
+}
+
 /*
  * 
  */
@@ -2493,7 +2536,11 @@ void *gps_thread_ep(void *arg) {
 
     // Read user motion file if any
     if (simulator->motion_file_name != NULL) {
-        numd = readUserMotion(xyz, simulator->motion_file_name);
+        if (simulator->umLLH == true)
+            numd = readUserMotionLLH(xyz, simulator->motion_file_name);
+        else
+            numd = readUserMotion(xyz, simulator->motion_file_name);
+        
         if (numd <= 0) {
             gui_status_wprintw(RED, "Failed to read user motion file.\n");
             goto end_gps_thread;
