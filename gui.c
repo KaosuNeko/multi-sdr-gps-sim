@@ -298,7 +298,7 @@ static void init_windows(void) {
     doupdate();
 }
 
-void gui_init(void) {
+void gui_init(int autopilot) {
     char ch;
     pthread_mutex_init(&gui_lock, NULL);
     pthread_mutex_lock(&gui_lock);
@@ -309,10 +309,12 @@ void gui_init(void) {
     /*check if the col and row meet the threshold */
     if (max_y < ROW_THRD || max_x < COL_THRD) {
         printf("Your console window size is %dx%d need 26x120\n", max_y, max_x);
-        printf("Do you still want to continue? [Y/N] ");
-        ch = getchar();
-        if ((ch != 'y') && (ch != 'Y')) {
-            exit(0);
+        if (!autopilot) {
+            printf("Do you still want to continue? [Y/N] ");
+            ch = getchar();
+            if ((ch != 'y') && (ch != 'Y')) {
+                exit(0);
+            }
         }
     }
     /* redo the initialization */

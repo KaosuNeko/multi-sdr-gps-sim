@@ -76,6 +76,9 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
             simulator.interactive_mode = false;
             simulator.umLLH = true;
             break;
+        case 'A':
+            simulator.autopilot = true;
+            break;
         case 701: // --station
             if (arg == NULL) {
                 return ARGP_ERR_UNKNOWN;
@@ -217,6 +220,7 @@ static void simulator_init(void) {
     simulator.sdr_type = SDR_NONE;
     simulator.sample_size = SC08;
     simulator.umLLH = false;
+    simulator.autopilot = false;
     pthread_cond_init(&simulator.gps_init_done, NULL);
     pthread_mutex_init(&simulator.gps_lock, NULL);
 }

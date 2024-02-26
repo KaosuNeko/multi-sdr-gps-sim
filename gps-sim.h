@@ -70,6 +70,7 @@ typedef struct {
     int ppb;
     int sample_size;
     int umLLH;
+    int autopilot;
     sdr_type_t sdr_type;
     char *nav_file_name;
     char *motion_file_name;

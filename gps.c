@@ -2989,6 +2989,10 @@ end_gps_thread:
     if (xyz)
         free(xyz);
     gui_status_wprintw(RED, "Exit GPS thread\n");
+    
+    if (simulator->autopilot) {
+        simulator->main_exit = true;
+    }
     simulator->gps_thread_exit = true;
     pthread_cond_signal(&(simulator->gps_init_done));
     pthread_exit(NULL);
