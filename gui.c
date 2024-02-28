@@ -22,6 +22,8 @@
 #include "gps.h"
 #include "gui.h"
 
+extern simulator_t simulator;
+
 static const int info_width = 50;
 static const int info_height = 13;
 static const int help_width = 50;
@@ -298,7 +300,7 @@ static void init_windows(void) {
     doupdate();
 }
 
-void gui_init(int autopilot) {
+void gui_init(void) {
     char ch;
     pthread_mutex_init(&gui_lock, NULL);
     pthread_mutex_lock(&gui_lock);
@@ -309,7 +311,7 @@ void gui_init(int autopilot) {
     /*check if the col and row meet the threshold */
     if (max_y < ROW_THRD || max_x < COL_THRD) {
         printf("Your console window size is %dx%d need 26x120\n", max_y, max_x);
-        if (!autopilot) {
+        if (!simulator.autopilot) {
             printf("Do you still want to continue? [Y/N] ");
             ch = getchar();
             if ((ch != 'y') && (ch != 'Y')) {
