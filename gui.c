@@ -363,34 +363,64 @@ void gui_destroy(void) {
 }
 
 void gui_mvwprintw(window_panel_t w, int y, int x, const char * fmt, ...) {
-    pthread_mutex_lock(&gui_lock);
-    va_list args;
-    if (wmove(window[w], y, x) == ERR) {
-        return;
+    if (simulator.autopilot) {
+        va_list args;
+        va_start(args, fmt);
+        // vsprintf() for string format
+        char buffer[256];
+        int result = vsprintf(buffer, fmt, args);
+        if (result < 0) {
+            perror("vsprintf");
+            return;
+        }
+        printf("%s\n", buffer);
+        va_end(args);
     }
-    va_start(args, fmt);
-    vw_printw(window[w], fmt, args);
-    va_end(args);
-    // Refresh only what is printed on top panel, don't care about background
-    // updates.
-    wrefresh(window[TOP]);
-    pthread_mutex_unlock(&gui_lock);
+    else {
+        pthread_mutex_lock(&gui_lock);
+        va_list args;
+        if (wmove(window[w], y, x) == ERR) {
+            return;
+        }
+        va_start(args, fmt);
+        vw_printw(window[w], fmt, args);
+        va_end(args);
+        // Refresh only what is printed on top panel, don't care about background
+        // updates.
+        wrefresh(window[TOP]);
+        pthread_mutex_unlock(&gui_lock);
+    }
 }
 
 void gui_status_wprintw(status_color_t clr, const char * fmt, ...) {
-    pthread_mutex_lock(&gui_lock);
-    va_list args;
-    va_start(args, fmt);
-    if (clr > 0) {
-        wattron(window[STATUS], COLOR_PAIR(clr));
+    if (simulator.autopilot) {
+        va_list args;
+        va_start(args, fmt);
+        // vsprintf() for string format
+        char buffer[256];
+        int result = vsprintf(buffer, fmt, args);
+        if (result < 0) {
+            perror("vsprintf");
+            return;
+        }
+        printf("%s\n", buffer);
+        va_end(args);
     }
-    vw_printw(window[STATUS], fmt, args);
-    if (clr > 0) {
-        wattroff(window[STATUS], COLOR_PAIR(clr));
+    else {
+        pthread_mutex_lock(&gui_lock);
+        va_list args;
+        va_start(args, fmt);
+        if (clr > 0) {
+            wattron(window[STATUS], COLOR_PAIR(clr));
+        }
+        vw_printw(window[STATUS], fmt, args);
+        if (clr > 0) {
+            wattroff(window[STATUS], COLOR_PAIR(clr));
+        }
+        va_end(args);
+        wrefresh(window[STATUS]);
+        pthread_mutex_unlock(&gui_lock);
     }
-    va_end(args);
-    wrefresh(window[STATUS]);
-    pthread_mutex_unlock(&gui_lock);
 }
 
 void gui_colorpair(window_panel_t w, unsigned clr, attr_status_t onoff) {

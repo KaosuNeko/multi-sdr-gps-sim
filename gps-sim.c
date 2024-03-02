@@ -246,7 +246,9 @@ static void cleanup_and_exit(int code) {
     free(simulator.motion_file_name);
     free(simulator.station_id);
     sdr_close();
-    gui_destroy();
+    if (!simulator.autopilot) {
+        gui_destroy();
+    }
     fflush(stdout);
     exit(code);
 }
@@ -305,7 +307,12 @@ int main(int argc, char** argv) {
         fprintf(stderr, "Error: GPS ephemeris file is not specified\n");
         return (EXIT_FAILURE);
     }
-    gui_init();
+    if (!simulator.autopilot) {
+        gui_init();
+    }
+    else {
+        printf("Start\n");
+    }
     // No access to GUI until this point
 
     if (simulator.interactive_mode && simulator.motion_file_name != NULL) {
@@ -324,7 +331,9 @@ int main(int argc, char** argv) {
     // Init prior GPS thread, creates FIFO.
     if (sdr_init(&simulator) == 0) {
         // Start GPS baseband signal generation
-        gui_top_panel(LS_FIX);
+        if (!simulator.autopilot) {
+            gui_top_panel(LS_FIX);
+        }
         pthread_create(&simulator.gps_thread, NULL, gps_thread_ep, &simulator);
 
         pthread_mutex_lock(&(simulator.gps_lock));
@@ -342,87 +351,93 @@ int main(int argc, char** argv) {
             }
         }
     }
-    // Run this until we get a termination signal.
-    while (!simulator.main_exit) {
-        ch = gui_getch();
-        if (ch != -1) {
-            switch (ch) {
-                case 'x':
-                case 'X':
-                    simulator.main_exit = true;
-                    break;
-                case 'i':
-                case 'I':
-                    gui_show_panel(INFO, ON);
-                    is_info_shown = true;
-                    break;
-                case '?':
-                case 'h':
-                case 'H':
-                    gui_show_panel(HELP, ON);
-                    is_help_shown = true;
-                    break;
-                case 9: // TAB
-                    gui_toggle_current_panel();
-                    break;
-                case 265: // F1
-                    gui_top_panel(TRACK);
-                    break;
-                case 266: // F2
-                    gui_top_panel(LS_FIX);
-                    break;
-                case 267: // F3
-                    gui_top_panel(KF_FIX);
-                    break;
-                case LEFT_KEY:
-                    simulator.target.bearing -= 127.0;
-                    if (simulator.target.bearing < 0) simulator.target.bearing = 360000.0;
-                    if (simulator.target.bearing > 360000) simulator.target.bearing = 0;
-                    gui_show_heading((float) (simulator.target.bearing / 1000));
-                    break;
-                case RIGHT_KEY:
-                    simulator.target.bearing += 127.0;
-                    if (simulator.target.bearing < 0) simulator.target.bearing = 360000.0;
-                    if (simulator.target.bearing > 360000) simulator.target.bearing = 0;
-                    gui_show_heading((float) (simulator.target.bearing / 1000));
-                    break;
-                case UP_KEY:
-                    simulator.target.vertical_speed += 1;
-                    gui_show_vertical_speed((float) simulator.target.vertical_speed);
-                    break;
-                case DOWN_KEY:
-                    simulator.target.vertical_speed -= 1;
-                    gui_show_vertical_speed((float) simulator.target.vertical_speed);
-                    break;
-                case UPSPEED_KEY:
-                    simulator.target.speed += 1.0;
-                    simulator.target.velocity = simulator.target.speed / 100.0;
-                    gui_show_speed((float) (simulator.target.velocity * 3.6));
-                    break;
-                case DOWNSPEED_KEY:
-                    simulator.target.speed -= 1.0;
-                    if (simulator.target.speed < 0) simulator.target.speed = 0;
-                    simulator.target.velocity = simulator.target.speed / 100.0;
-                    gui_show_speed((float) (simulator.target.velocity * 3.6));
-                    break;
-                case GAIN_INC_KEY:
-                    simulator.tx_gain = sdr_set_gain(simulator.tx_gain + 1);
-                    gui_status_wprintw(GREEN, "Gain: %ddB.\r", simulator.tx_gain);
-                    break;
-                case GAIN_DEC_KEY:
-                    simulator.tx_gain = sdr_set_gain(simulator.tx_gain - 1);
-                    gui_status_wprintw(GREEN, "Gain: %ddB.\r", simulator.tx_gain);
-                    break;
-                default:
-                    if (is_info_shown) {
-                        gui_show_panel(INFO, OFF);
-                        is_info_shown = false;
-                    }
-                    if (is_help_shown) {
-                        gui_show_panel(HELP, OFF);
-                        is_help_shown = false;
-                    }
-                    break;
+
+    if (simulator.autopilot) {
+        while (!simulator.main_exit) {;}
+    }
+    else {
+        // Run this until we get a termination signal.
+        while (!simulator.main_exit) {
+            ch = gui_getch();
+            if (ch != -1) {
+                switch (ch) {
+                    case 'x':
+                    case 'X':
+                        simulator.main_exit = true;
+                        break;
+                    case 'i':
+                    case 'I':
+                        gui_show_panel(INFO, ON);
+                        is_info_shown = true;
+                        break;
+                    case '?':
+                    case 'h':
+                    case 'H':
+                        gui_show_panel(HELP, ON);
+                        is_help_shown = true;
+                        break;
+                    case 9: // TAB
+                        gui_toggle_current_panel();
+                        break;
+                    case 265: // F1
+                        gui_top_panel(TRACK);
+                        break;
+                    case 266: // F2
+                        gui_top_panel(LS_FIX);
+                        break;
+                    case 267: // F3
+                        gui_top_panel(KF_FIX);
+                        break;
+                    case LEFT_KEY:
+                        simulator.target.bearing -= 127.0;
+                        if (simulator.target.bearing < 0) simulator.target.bearing = 360000.0;
+                        if (simulator.target.bearing > 360000) simulator.target.bearing = 0;
+                        gui_show_heading((float) (simulator.target.bearing / 1000));
+                        break;
+                    case RIGHT_KEY:
+                        simulator.target.bearing += 127.0;
+                        if (simulator.target.bearing < 0) simulator.target.bearing = 360000.0;
+                        if (simulator.target.bearing > 360000) simulator.target.bearing = 0;
+                        gui_show_heading((float) (simulator.target.bearing / 1000));
+                        break;
+                    case UP_KEY:
+                        simulator.target.vertical_speed += 1;
+                        gui_show_vertical_speed((float) simulator.target.vertical_speed);
+                        break;
+                    case DOWN_KEY:
+                        simulator.target.vertical_speed -= 1;
+                        gui_show_vertical_speed((float) simulator.target.vertical_speed);
+                        break;
+                    case UPSPEED_KEY:
+                        simulator.target.speed += 1.0;
+                        simulator.target.velocity = simulator.target.speed / 100.0;
+                        gui_show_speed((float) (simulator.target.velocity * 3.6));
+                        break;
+                    case DOWNSPEED_KEY:
+                        simulator.target.speed -= 1.0;
+                        if (simulator.target.speed < 0) simulator.target.speed = 0;
+                        simulator.target.velocity = simulator.target.speed / 100.0;
+                        gui_show_speed((float) (simulator.target.velocity * 3.6));
+                        break;
+                    case GAIN_INC_KEY:
+                        simulator.tx_gain = sdr_set_gain(simulator.tx_gain + 1);
+                        gui_status_wprintw(GREEN, "Gain: %ddB.\r", simulator.tx_gain);
+                        break;
+                    case GAIN_DEC_KEY:
+                        simulator.tx_gain = sdr_set_gain(simulator.tx_gain - 1);
+                        gui_status_wprintw(GREEN, "Gain: %ddB.\r", simulator.tx_gain);
+                        break;
+                    default:
+                        if (is_info_shown) {
+                            gui_show_panel(INFO, OFF);
+                            is_info_shown = false;
+                        }
+                        if (is_help_shown) {
+                            gui_show_panel(HELP, OFF);
+                            is_help_shown = false;
+                        }
+                        break;
+                }
             }
         }
     }
